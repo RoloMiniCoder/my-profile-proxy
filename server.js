@@ -1,18 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-require('dotenv').config();
 const { quotes } = require('./quotes.json')
+require('dotenv').config();
 
+const PORT = process.env.PORT
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
 const STEAM_USER_ID = process.env.STEAM_USER_ID;
-const STEAM_URL = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_USER_ID}&format=json`
-const PORT = process.env.PORT
-const LASTFM_USER = 'darkstahrl';
 const LAST_FM_API_KEY = process.env.LAST_FM_API_KEY;
+const STEAM_URL = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_USER_ID}&format=json`
+const LASTFM_USER = 'darkstahrl';
 const RECENT_TRACKS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}`;
 const TOP_TRACKS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}&format=json&limit=10&period=7day`;
 const TOP_ARTISTS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}&format=json&limit=10&period=7day`
+const GITHUB_URL = `https://api.github.com/users/rolominicoder/starred`;
+const GH_IMG_LINK_PREFIX = 'https://opengraph.githubassets.com/0/RoloMiniCoder/';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes in ms
 
 // Chache for weeklySummary
@@ -166,16 +168,23 @@ app.get(`/api/github/starred`, async (req, res) => {
             return res.json(githubCache.data);
         }
 
-        const githubUrl = `https://api.github.com/users/rolominicoder/starred`;
-        const apiResponse = await fetch(githubUrl);
+        const apiResponse = await fetch(GITHUB_URL);
         const apiData = await apiResponse.json();
+        const cleanedData = apiData.map(({ html_url, name, description }) => {
+                        return {
+                            html_url,
+                            name,
+                            description,
+                            image: GH_IMG_LINK_PREFIX + name
+                        }
+                    })
 
         githubCache = {
-            data: apiData,
+            data: cleanedData,
             timestamp: Date.now(),
         }
 
-        res.json(apiData);
+        res.json(cleanedData);
     } catch (error) {
         console.error('External API fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch data from external service.' });
