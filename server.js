@@ -10,7 +10,8 @@ const STEAM_USER_ID = process.env.STEAM_USER_ID;
 const LAST_FM_API_KEY = process.env.LAST_FM_API_KEY;
 const STEAM_URL = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_USER_ID}&format=json`
 const LASTFM_USER = 'darkstahrl';
-const RECENT_TRACKS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}`;
+const CAROLINA = 'kay_p'
+const RECENT_TRACKS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}&format=json`;
 const TOP_TRACKS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}&format=json&limit=10&period=7day`;
 const TOP_ARTISTS_URL = `https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${LASTFM_USER}&api_key=${LAST_FM_API_KEY}&format=json&limit=10&period=7day`
 const GITHUB_URL = `https://api.github.com/users/rolominicoder/starred`;
@@ -171,13 +172,13 @@ app.get(`/api/github/starred`, async (req, res) => {
         const apiResponse = await fetch(GITHUB_URL);
         const apiData = await apiResponse.json();
         const cleanedData = apiData.map(({ html_url, name, description }) => {
-                        return {
-                            html_url,
-                            name,
-                            description,
-                            image: GH_IMG_LINK_PREFIX + name
-                        }
-                    })
+            return {
+                html_url,
+                name,
+                description,
+                image: GH_IMG_LINK_PREFIX + name
+            }
+        })
 
         githubCache = {
             data: cleanedData,
@@ -249,8 +250,25 @@ app.get(`/api/music/data`, async (req, res) => {
             timestamp: Date.now(),
         }
 
-        setTimeout(()=>res.json(musicDataCache.data),2500);
+        setTimeout(() => res.json(musicDataCache.data), 2500);
 
+    } catch (error) {
+        console.error('External API fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch data from external service.' });
+    }
+})
+
+app.get(`/api/music/playing`, async (req, res) => {
+    try {
+        const response = await fetch(RECENT_TRACKS_URL)
+        const parsed = await response.json()
+        const currentlyPlaying = parsed.recenttracks.track[0]['@attr']?.nowplaying ? parsed.recenttracks.track[0] : null;
+        const cleanedUp = currentlyPlaying ? {
+            artist: currentlyPlaying.artist['#text'],
+            album: currentlyPlaying.album[`#text`],
+            url: currentlyPlaying.url
+        } : {};
+        res.json(cleanedUp)
     } catch (error) {
         console.error('External API fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch data from external service.' });
@@ -259,7 +277,6 @@ app.get(`/api/music/data`, async (req, res) => {
 
 app.get(`/api/quotes`, async (req, res) => {
     const quote = quotes[Math.floor(Math.random() * quotes.length)]
-    console.log(quote)
     res.json({ quote })
 })
 
