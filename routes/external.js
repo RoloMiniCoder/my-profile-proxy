@@ -9,6 +9,7 @@ let weeklyTracksCache = { data: null, timestamp: 0 };
 let githubCache = { data: null, timestamp: 0 };
 let steamCache = { data: null, timestamp: 0 };
 let musicDataCache = { data: null, timestamp: 0 };
+let nowPlayingCache = { data: null, timestamp: 0 };
 
 async function fetchAllRecentTracks({ fromTs, toTs }) {
     const limit = 200;
@@ -37,7 +38,7 @@ async function getWeeklySummary() {
     const now = Math.floor(Date.now() / 1000);
     const sevenDaysAgo = now - 7 * 24 * 60 * 60;
     const allTracks = await fetchAllRecentTracks({ fromTs: sevenDaysAgo, toTs: now });
-    
+
     const totalScrobbles = allTracks.length;
     const uniqueTracks = new Set(
         allTracks.map((t) => `${t.artist['#text'] || t.artist.name}::${t.name}`)
@@ -102,14 +103,19 @@ router.get('/music/data', async (req, res) => {
 
 router.get('/music/playing', async (req, res) => {
     try {
+        if (nowPlayingCache.data && Date.now() - nowPlayingCache.timestamp < 60000) {
+            return res.json(nowPlayingCache.data);
+        }
         const response = await fetch(config.RECENT_TRACKS_URL)
         const parsed = await response.json()
         const currentlyPlaying = parsed.recenttracks.track[0]['@attr']?.nowplaying ? parsed.recenttracks.track[0] : null;
         const cleanedUp = currentlyPlaying ? {
             artist: currentlyPlaying.artist['#text'],
             album: currentlyPlaying.album[`#text`],
-            url: currentlyPlaying.url
+            url: currentlyPlaying.url,
+            name: currentlyPlaying.name
         } : {};
+        nowPlayingCache = { data: cleanedUp, timestamp: Date.now() };
         res.json(cleanedUp)
     } catch (error) {
         console.error('External API fetch error:', error);
