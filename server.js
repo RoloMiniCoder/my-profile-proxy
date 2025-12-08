@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -30,7 +31,7 @@ const corsOptions = {
   origin: config.CORS_ALLOWED_ORIGINS,
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
+wwwapp.use(cors(corsOptions));
 app.use(express.json());
 
 // Attach the database pool to the request object so routes can access it
@@ -41,6 +42,8 @@ app.use((req, res, next) => {
 
 app.use('/api', externalRoutes); // Handles /api/music, /api/github, etc.
 app.use('/api', blogRoutes);    // Handles /api/posts
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+
 
 app.listen(PORT, () => {
   console.log(`Proxy listening on port ${PORT}`);

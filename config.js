@@ -6,7 +6,7 @@ const STEAM_API_KEY = process.env.STEAM_API_KEY;
 module.exports = {
     PORT: process.env.PORT || 3001,
     CACHE_TTL: 10 * 60 * 1000, // 10 minutes in ms
-    CORS_ALLOWED_ORIGINS: ['http://localhost:5173', 'https://your-react-app.com'],
+    CORS_ALLOWED_ORIGINS: ['http://localhost:5173', 'https://your-react-app.com', 'http://192.168.10.178:5173'],
     GH_IMG_LINK_PREFIX: 'https://opengraph.githubassets.com/0/RoloMiniCoder/',
 
     // External API URLs
