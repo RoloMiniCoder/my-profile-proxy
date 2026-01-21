@@ -31,7 +31,7 @@ const corsOptions = {
   origin: config.CORS_ALLOWED_ORIGINS,
   optionsSuccessStatus: 200
 };
-wwwapp.use(cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Attach the database pool to the request object so routes can access it
